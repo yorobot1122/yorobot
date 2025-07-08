@@ -1,3 +1,15 @@
+from flask inmport Flask
+from threading import Thread
+
+app = Flask(__name__)
+
+@app.route('/')
+def home():
+    return "Bot is running!"
+
+def run_flask():
+    app.run(host='0.0.0.0', port=8080)
+
 import os
 import discord
 from discord.ext import commands
@@ -56,6 +68,7 @@ def check_command_channel(ctx):
 def check_google_channel(ctx):
     return ctx.channel.id == GOOGLE_SEARCH_CHANNEL_ID
 
+Thread(target=run_flask).start()
 
 @bot.event
 async def on_ready():
