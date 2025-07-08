@@ -3,3 +3,4 @@ serpapi
 yt-dlp
 beautifulsoup4
 discord.py
+flask
