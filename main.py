@@ -45,6 +45,7 @@ YTDL_OPTIONS = {
     'noplaylist': True,
     'default_search': 'auto',
     'quiet': True,
+    'cookiefile': 'cookies.txt',
 }
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
