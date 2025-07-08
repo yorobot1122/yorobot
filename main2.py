@@ -262,30 +262,57 @@ async def google_search(ctx, *, query):
 async def dc_search(ctx, *, query):
     await ctx.send(f"🔍 디시인사이드 메이플랜드 갤러리에서 '{query}' 검색 중...")
     try:
+        # 1. 검색 요청 및 HTML 파싱
         response = requests.get(
             "https://gall.dcinside.com/mgallery/board/lists",
-            params={"id": "mapleland", "s_type": "search_subject_memo", "s_keyword": query},
-            headers={"User-Agent": "Mozilla/5.0"}
+            params={
+                "id": "mapleland",
+                "s_type": "search_subject_memo",
+                "s_keyword": query
+            },
+            headers={
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+            }
         )
-        soup = BeautifulSoup(response.text, "html.parser")
-        results = soup.select("tr.ub-content")
-        if not results:
+        soup = BeautifulSoup(response.text, 'html.parser')
+        
+        # 2. 게시글 목록 선택 (최신 구조 반영)
+        posts = soup.select('tbody > tr:not(.notice)')
+        
+        if not posts:
             await ctx.send("❌ 검색 결과가 없습니다.")
             return
 
-        msg = "**🧾 디시 검색 결과:**\n"
+        # 3. 상위 5개 결과 추출
+        msg = "**🧾 디시 검색 결과 (최신 5개):**\n"
         count = 0
-        for row in results:
-            tag = row.select_one("a.icon_pic_n") or row.select_one("a.icon_txt_n")
-            if tag:
-                title, href = tag.text.strip(), tag['href']
-                msg += f"• [{title}](https://gall.dcinside.com{href})\n"
-                count += 1
-            if count >= 3:
+        
+        for post in posts:
+            if count >= 5:
                 break
+                
+            # 제목 추출
+            title_tag = post.select_one('.gall_tit > a')
+            if not title_tag:
+                continue
+                
+            title = title_tag.text.strip()
+            link = title_tag['href']
+            
+            # 링크 형식 보정
+            if not link.startswith('http'):
+                link = f"https://gall.dcinside.com{link}"
+            
+            # 번호 추출 (공지사항 필터링)
+            num_tag = post.select_one('.gall_num')
+            if num_tag and num_tag.text.strip().isdigit():
+                msg += f"• [{title}]({link})\n"
+                count += 1
+
         await ctx.send(msg)
+        
     except Exception as e:
-        await ctx.send(f"❌ 오류 발생: {e}")
+        await ctx.send(f"❌ 오류 발생: {str(e)}")
 
 # --- 에러 핸들링 (통합) ---
 @bot.event
