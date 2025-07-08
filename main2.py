@@ -37,8 +37,13 @@ bot = commands.Bot(command_prefix='!', intents=intents)
 COMMAND_CHANNEL_ID = 1391779448839208960
 MUSIC_VOICE_CHANNEL_ID = 1391779601906274344
 GOOGLE_SEARCH_CHANNEL_ID = 1391814034772197437
-DELETE_INTERVAL_MINUTES = 60
-clean_task = None
+
+# 채널별 정리 설정 (채널ID: 정리주기(분))
+CHANNEL_CLEAN_SETTINGS = {
+    COMMAND_CHANNEL_ID: 60,
+    GOOGLE_SEARCH_CHANNEL_ID: 60
+}
+clean_tasks = {}
 
 # --- YTDL / FFMPEG 옵션 ---
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -53,7 +58,7 @@ YTDL_OPTIONS = {
 }
 
 FFMPEG_OPTIONS = {
-    'before_options': '-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5',
+    'before_options': '-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5 -threads 1',  # CPU 스레드 제한 추가
     'options': '-vn'
 }
 
@@ -68,13 +73,29 @@ def check_command_channel(ctx):
 def check_google_channel(ctx):
     return ctx.channel.id == GOOGLE_SEARCH_CHANNEL_ID
 
+# --- 채널 정리 태스크 생성 함수 ---
+def create_clean_task(channel_id):
+    @tasks.loop(minutes=CHANNEL_CLEAN_SETTINGS[channel_id])
+    async def task():
+        channel = bot.get_channel(channel_id)
+        if channel:
+            try:
+                deleted = await channel.purge(limit=100, check=lambda m: not m.pinned)
+                print(f"#{channel.name} 채널에서 {len(deleted)}개의 메시지 삭제")
+            except Exception as e:
+                print(f"채널 정리 오류: {e}")
+    return task
+
 # --- 봇 시작 시 ---
 @bot.event
 async def on_ready():
-    global clean_task
     print(f'{bot.user.name} 로그인 완료')
-    if clean_task is None:
-        clean_task = clean_channel.start()
+    
+    # 채널별 정리 태스크 시작
+    for channel_id in CHANNEL_CLEAN_SETTINGS:
+        task = create_clean_task(channel_id)
+        task.start()
+        clean_tasks[channel_id] = task
 
 # --- 음악 재생 ---
 async def play_next(ctx):
@@ -92,15 +113,22 @@ async def play_next(ctx):
 
         await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.listening, name=title))
         
-        source_audio = discord.FFmpegPCMAudio(url, **FFMPEG_OPTIONS)
-        source = discord.PCMVolumeTransformer(source_audio, volume=0.5)
-        ctx.voice_client.play(source,
-                              after=lambda e: asyncio.run_coroutine_threadsafe(play_next(ctx), bot.loop))
-        ctx.voice_client.source = source
-        await ctx.send(f"🎵 재생 중: **{title}**")
-        is_playing = True
+        try:
+            source_audio = discord.FFmpegPCMAudio(url, **FFMPEG_OPTIONS)
+            source = discord.PCMVolumeTransformer(source_audio, volume=0.5)
+            ctx.voice_client.play(source,
+                                  after=lambda e: asyncio.run_coroutine_threadsafe(play_next(ctx), bot.loop))
+            ctx.voice_client.source = source
+            await ctx.send(f"🎵 재생 중: **{title}**")
+            is_playing = True
+        except Exception as e:
+            print(f"재생 실패: {e}")
+            # 오류 발생 시 2초 후 재시도
+            await asyncio.sleep(2)
+            await play_next(ctx)
     else:
-        await ctx.voice_client.disconnect()
+        if ctx.voice_client:
+            await ctx.voice_client.disconnect()
         is_playing = False
 
 # --- 명령어: !노래 ---
@@ -123,17 +151,32 @@ async def play(ctx, *, arg: str):
 
         await ctx.send(f"🔍 '{query}' 검색 중...")
 
-        with yt_dlp.YoutubeDL(YTDL_OPTIONS) as ydl:
-            info = ydl.extract_info(query if "youtube.com" in query or "youtu.be" in query else f"ytsearch:{query}", download=False)
-            info = info['entries'][0] if 'entries' in info else info
+        # 비동기 스레드에서 블로킹 작업 실행
+        def download_info():
+            with yt_dlp.YoutubeDL(YTDL_OPTIONS) as ydl:
+                return ydl.extract_info(
+                    query if "youtube.com" in query or "youtu.be" in query else f"ytsearch:{query}",
+                    download=False
+                )
+        
+        raw_info = await asyncio.to_thread(download_info)
+        info = raw_info['entries'][0] if 'entries' in raw_info else raw_info
+
+        # 메모리 절약을 위한 최소 데이터 저장
+        song_data = {
+            'url': info['url'],
+            'title': info['title'],
+            'duration': info.get('duration', 0)
+        }
 
         if pos is not None and 0 <= pos <= len(music_queue):
-            music_queue.insert(pos, info)
-            await ctx.send(f"✅ **{info['title']}** 을(를) 대기열 {pos}번째에 추가했습니다.")
+            music_queue.insert(pos, song_data)
+            await ctx.send(f"✅ **{song_data['title']}** 을(를) 대기열 {pos}번째에 추가했습니다.")
         else:
-            music_queue.append(info)
-            await ctx.send(f"✅ **{info['title']}** 을(를) 대기열에 추가했습니다.")
+            music_queue.append(song_data)
+            await ctx.send(f"✅ **{song_data['title']}** 을(를) 대기열에 추가했습니다.")
 
+        # 재생 중이 아닐 때만 즉시 재생
         if not is_playing:
             is_playing = True
             await play_next(ctx)
@@ -213,27 +256,31 @@ async def skip(ctx):
         await ctx.send("재생 중인 곡이 없습니다.")
 
 # --- 정리 주기 설정 ---
-@tasks.loop(minutes=DELETE_INTERVAL_MINUTES)
-async def clean_channel():
-    channel = bot.get_channel(COMMAND_CHANNEL_ID)
-    if channel:
-        deleted = await channel.purge(limit=100, check=lambda m: not m.pinned)
-        print(f"{len(deleted)}개의 메시지를 삭제했습니다.")
-
 @bot.command(name='정리주기')
 @commands.check(check_command_channel)
 @commands.has_permissions(manage_messages=True)
-async def set_clean_interval(ctx, minutes: int):
-    global clean_task, DELETE_INTERVAL_MINUTES
+async def set_clean_interval(ctx, channel: discord.TextChannel, minutes: int):
     if not 1 <= minutes <= 1440:
         await ctx.send("❌ 1~1440 분 사이로 입력해주세요.")
         return
-    DELETE_INTERVAL_MINUTES = minutes
-    if clean_channel.is_running():
-        clean_channel.change_interval(minutes=DELETE_INTERVAL_MINUTES)
-    else:
-        clean_task = clean_channel.start()
-    await ctx.send(f"✅ 채널 자동 청소 주기를 {DELETE_INTERVAL_MINUTES}분으로 변경했습니다.")
+    
+    if channel.id not in CHANNEL_CLEAN_SETTINGS:
+        await ctx.send("❌ 정리 가능한 채널이 아닙니다.")
+        return
+    
+    # 기존 태스크 중지
+    if channel.id in clean_tasks:
+        clean_tasks[channel.id].cancel()
+    
+    # 새 설정 적용
+    CHANNEL_CLEAN_SETTINGS[channel.id] = minutes
+    
+    # 새 태스크 시작
+    task = create_clean_task(channel.id)
+    task.start()
+    clean_tasks[channel.id] = task
+    
+    await ctx.send(f"✅ #{channel.name} 채널의 자동 청소 주기를 {minutes}분으로 변경했습니다.")
 
 # --- 구글 / 디시 검색 ---
 @bot.command(name="구글")
@@ -262,7 +309,7 @@ async def google_search(ctx, *, query):
 async def dc_search(ctx, *, query):
     await ctx.send(f"🔍 디시인사이드 메이플랜드 갤러리에서 '{query}' 검색 중...")
     try:
-        # 1. 검색 요청 및 HTML 파싱
+        # 검색 요청
         response = requests.get(
             "https://gall.dcinside.com/mgallery/board/lists",
             params={
@@ -271,19 +318,22 @@ async def dc_search(ctx, *, query):
                 "s_keyword": query
             },
             headers={
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+                "Referer": "https://gall.dcinside.com/"
             }
         )
+        
+        # HTML 파싱
         soup = BeautifulSoup(response.text, 'html.parser')
         
-        # 2. 게시글 목록 선택 (최신 구조 반영)
-        posts = soup.select('tbody > tr:not(.notice)')
+        # 게시글 목록 선택
+        posts = soup.select('tbody > tr')
         
         if not posts:
             await ctx.send("❌ 검색 결과가 없습니다.")
             return
 
-        # 3. 상위 5개 결과 추출
+        # 상위 5개 결과 추출
         msg = "**🧾 디시 검색 결과 (최신 5개):**\n"
         count = 0
         
@@ -291,16 +341,20 @@ async def dc_search(ctx, *, query):
             if count >= 5:
                 break
                 
+            # 공지사항 건너뛰기
+            if 'notice' in post.get('class', []):
+                continue
+                
             # 제목 추출
-            title_tag = post.select_one('.gall_tit > a')
+            title_tag = post.select_one('.gall_tit a')
             if not title_tag:
                 continue
                 
             title = title_tag.text.strip()
-            link = title_tag['href']
+            link = title_tag.get('href', '')
             
             # 링크 형식 보정
-            if not link.startswith('http'):
+            if link and not link.startswith('http'):
                 link = f"https://gall.dcinside.com{link}"
             
             # 번호 추출 (공지사항 필터링)
@@ -309,7 +363,7 @@ async def dc_search(ctx, *, query):
                 msg += f"• [{title}]({link})\n"
                 count += 1
 
-        await ctx.send(msg)
+        await ctx.send(msg if count > 0 else "❌ 검색 결과가 없습니다.")
         
     except Exception as e:
         await ctx.send(f"❌ 오류 발생: {str(e)}")
@@ -324,6 +378,8 @@ async def on_command_error(ctx, error):
             await ctx.send(f"❗이 명령어는 <#{COMMAND_CHANNEL_ID}> 채널에서만 사용할 수 있습니다.")
     elif isinstance(error, commands.MissingPermissions):
         await ctx.send("❌ 권한이 부족합니다.")
+    elif isinstance(error, commands.ChannelNotFound):
+        await ctx.send("❌ 채널을 찾을 수 없습니다.")
     else:
         raise error
 
@@ -344,10 +400,13 @@ async def show_commands(ctx):
         "!일시정지              ⏸️ 일시정지/재개\n"
         "!볼륨 [0~100]          🔊 볼륨 설정\n"
         "!스킵                 ⏭️ 다음 곡으로\n"
-        "!정리주기 [분]         🧹 자동 청소 설정\n"
+        "!정리주기 [채널] [분]  🧹 자동 청소 설정\n"
         "!구글 [검색어]         🔎 구글 검색\n"
         "!디시 [검색어]         🧾 디시 갤러리 검색\n"
-        "```"
+        "```\n"
+        f"**채널별 명령어 사용처:**\n"
+        f"- 음악 명령어: <#{COMMAND_CHANNEL_ID}>\n"
+        f"- 검색 명령어: <#{GOOGLE_SEARCH_CHANNEL_ID}>"
     )
 
 # --- 봇 실행 ---
