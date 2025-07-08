@@ -1,0 +1,5 @@
+requests
+serpapi
+yt-dlp
+beautifulsoup4
+discord.py
