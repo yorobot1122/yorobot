@@ -95,7 +95,7 @@ async def play_next(ctx):
         ctx.voice_client.play(source,
                               after=lambda e: asyncio.run_coroutine_threadsafe(play_next(ctx), bot.loop))
         ctx.voice_client.source = source
-        await ctx.send(f"🎵 재생 중: **{title}**\n재생 URL: {url}")
+        await ctx.send(f"🎵 재생 중: **{title}**")
         is_playing = True
     else:
         await ctx.voice_client.disconnect()
