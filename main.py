@@ -21,7 +21,9 @@ from serpapi import GoogleSearch
 import requests
 from bs4 import BeautifulSoup
 from urllib.parse import quote
+from dotenv import load_dotenv
 
+load_dotenv()
 DISCORD_TOKEN = os.getenv('TOKEN')
 SERP_API_KEY = os.getenv('API')
 
