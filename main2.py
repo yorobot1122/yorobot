@@ -90,6 +90,8 @@ async def play_next(ctx):
         url = info['url']
         title = info['title']
 
+        await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.listening, name=title))
+        
         source_audio = discord.FFmpegPCMAudio(url, **FFMPEG_OPTIONS)
         source = discord.PCMVolumeTransformer(source_audio, volume=0.5)
         ctx.voice_client.play(source,
