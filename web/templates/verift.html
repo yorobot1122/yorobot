@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>메이플랜드 GIFT 길드 디스코드 인증 화면입니다.</title>
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+</head>
+<body>
+    <h2>로봇이 아님을 인증해주세요</h2>
+    <form method="POST">
+        <input type="hidden" name="user_id" value="{{ user_id }}">
+        <div class="g-recaptcha" data-sitekey="{{ site_key }}"></div>
+        <br/>
+        <input type="submit" value="인증 완료">
+    </form>
+</body>
+</html>
