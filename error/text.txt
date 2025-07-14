@@ -1,64 +1,32 @@
-[2025-07-08 03:56:19] [INFO    ] discord.voice_state: Connecting to voice...
-[2025-07-08 03:56:19] [INFO    ] discord.voice_state: Starting voice handshake... (connection attempt 1)
-[2025-07-08 03:56:19] [INFO    ] discord.voice_state: Voice handshake complete. Endpoint found: c-iad16-8de0deee.discord.media
-[2025-07-08 03:56:19] [ERROR   ] discord.voice_state: Failed to connect to voice... Retrying in 1.0s...
-Traceback (most recent call last):
-  File "/workspace/.heroku/python/lib/python3.13/site-packages/discord/voice_state.py", line 413, in _inner_connect
-    await self._handshake_websocket()
-  File "/workspace/.heroku/python/lib/python3.13/site-packages/discord/voice_state.py", line 583, in _handshake_websocket
-    await self.ws.poll_event()
-  File "/workspace/.heroku/python/lib/python3.13/site-packages/discord/gateway.py", line 1039, in poll_event
-    raise ConnectionClosed(self.ws, shard_id=None, code=self._close_code)
-discord.errors.ConnectionClosed: Shard ID None WebSocket closed with 4006
-[2025-07-08 03:56:19] [INFO    ] discord.voice_state: The voice handshake is being terminated for Channel ID 1391779601906274344 (Guild ID 1391778126115115090)
-[2025-07-08 03:56:20] [INFO    ] discord.voice_state: Starting voice handshake... (connection attempt 2)
-[2025-07-08 03:56:20] [INFO    ] discord.voice_state: Voice handshake complete. Endpoint found: c-iad17-840c5bcb.discord.media
-[2025-07-08 03:56:20] [ERROR   ] discord.voice_state: Failed to connect to voice... Retrying in 3.0s...
-Traceback (most recent call last):
-  File "/workspace/.heroku/python/lib/python3.13/site-packages/discord/voice_state.py", line 413, in _inner_connect
-    await self._handshake_websocket()
-  File "/workspace/.heroku/python/lib/python3.13/site-packages/discord/voice_state.py", line 583, in _handshake_websocket
-    await self.ws.poll_event()
-  File "/workspace/.heroku/python/lib/python3.13/site-packages/discord/gateway.py", line 1039, in poll_event
-    raise ConnectionClosed(self.ws, shard_id=None, code=self._close_code)
-discord.errors.ConnectionClosed: Shard ID None WebSocket closed with 4006
-[2025-07-08 03:56:20] [INFO    ] discord.voice_state: The voice handshake is being terminated for Channel ID 1391779601906274344 (Guild ID 1391778126115115090)
-[2025-07-08 03:56:23] [INFO    ] discord.voice_state: Starting voice handshake... (connection attempt 3)
-[2025-07-08 03:56:24] [INFO    ] discord.voice_state: Voice handshake complete. Endpoint found: c-iad16-e7c5bd91.discord.media
-[2025-07-08 03:56:24] [ERROR   ] discord.voice_state: Failed to connect to voice... Retrying in 5.0s...
-Traceback (most recent call last):
-  File "/workspace/.heroku/python/lib/python3.13/site-packages/discord/voice_state.py", line 413, in _inner_connect
-    await self._handshake_websocket()
-  File "/workspace/.heroku/python/lib/python3.13/site-packages/discord/voice_state.py", line 583, in _handshake_websocket
-    await self.ws.poll_event()
-  File "/workspace/.heroku/python/lib/python3.13/site-packages/discord/gateway.py", line 1039, in poll_event
-    raise ConnectionClosed(self.ws, shard_id=None, code=self._close_code)
-discord.errors.ConnectionClosed: Shard ID None WebSocket closed with 4006
-[2025-07-08 03:56:24] [INFO    ] discord.voice_state: The voice handshake is being terminated for Channel ID 1391779601906274344 (Guild ID 1391778126115115090)
-[2025-07-08 03:56:29] [INFO    ] discord.voice_state: Starting voice handshake... (connection attempt 4)
-[2025-07-08 03:56:29] [INFO    ] discord.voice_state: Voice handshake complete. Endpoint found: c-iad09-aa6ed4b3.discord.media
-[2025-07-08 03:56:29] [ERROR   ] discord.voice_state: Failed to connect to voice... Retrying in 7.0s...
-Traceback (most recent call last):
-  File "/workspace/.heroku/python/lib/python3.13/site-packages/discord/voice_state.py", line 413, in _inner_connect
-    await self._handshake_websocket()
-  File "/workspace/.heroku/python/lib/python3.13/site-packages/discord/voice_state.py", line 583, in _handshake_websocket
-    await self.ws.poll_event()
-  File "/workspace/.heroku/python/lib/python3.13/site-packages/discord/gateway.py", line 1039, in poll_event
-    raise ConnectionClosed(self.ws, shard_id=None, code=self._close_code)
-discord.errors.ConnectionClosed: Shard ID None WebSocket closed with 4006
-[2025-07-08 03:56:29] [INFO    ] discord.voice_state: The voice handshake is being terminated for Channel ID 1391779601906274344 (Guild ID 1391778126115115090)
-[2025-07-08 03:56:36] [INFO    ] discord.voice_state: Starting voice handshake... (connection attempt 5)
-[2025-07-08 03:56:36] [INFO    ] discord.voice_state: Voice handshake complete. Endpoint found: c-iad09-5c830aef.discord.media
-[2025-07-08 03:56:36] [ERROR   ] discord.voice_state: Failed to connect to voice... Retrying in 9.0s...
-Traceback (most recent call last):
-  File "/workspace/.heroku/python/lib/python3.13/site-packages/discord/voice_state.py", line 413, in _inner_connect
-    await self._handshake_websocket()
-  File "/workspace/.heroku/python/lib/python3.13/site-packages/discord/voice_state.py", line 583, in _handshake_websocket
-    await self.ws.poll_event()
-  File "/workspace/.heroku/python/lib/python3.13/site-packages/discord/gateway.py", line 1039, in poll_event
-    raise ConnectionClosed(self.ws, shard_id=None, code=self._close_code)
-discord.errors.ConnectionClosed: Shard ID None WebSocket closed with 4006
-[2025-07-08 03:56:36] [INFO    ] discord.voice_state: The voice handshake is being terminated for Channel ID 1391779601906274344 (Guild ID 1391778126115115090)
-[2025-07-08 03:56:45] [INFO    ] discord.voice_state: Voice connection complete.
-[2025-07-08 03:56:45] [INFO    ] discord.voice_state: Disconnecting from voice normally, close code 1000.
-[2025-07-08 03:56:45] [INFO    ] discord.voice_state: The voice handshake is being terminated for Channel ID 1391779601906274344 (Guild ID 1391778126115115090)
+ubuntu@yorobot:~$ sudo certbot certonly --standalone -d giftguildauth.duckdns.org
+Saving debug log to /var/log/letsencrypt/letsencrypt.log
+Enter email address or hit Enter to skip.
+ (Enter 'c' to cancel): vv22vx22@gmail.com
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+Please read the Terms of Service at:
+https://letsencrypt.org/documents/LE-SA-v1.5-February-24-2025.pdf
+You must agree in order to register with the ACME server. Do you agree?
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+(Y)es/(N)o: y
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+Would you be willing, once your first certificate is successfully issued, to
+share your email address with the Electronic Frontier Foundation, a founding
+partner of the Let's Encrypt project and the non-profit organization that
+develops Certbot? We'd like to send you email about our work encrypting the web,
+EFF news, campaigns, and ways to support digital freedom.
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+(Y)es/(N)o: y
+Account registered.
+Requesting a certificate for giftguildauth.duckdns.org
+
+Certbot failed to authenticate some domains (authenticator: standalone). The Certificate Authority reported these problems:
+  Domain: giftguildauth.duckdns.org
+  Type:   connection
+  Detail: 138.2.119.168: Fetching http://giftguildauth.duckdns.org/.well-known/acme-challenge/qHZSlyWk_uCe9XQmVHtMLNiQONqcSpTbhR6X_AC7jVs: Timeout during connect (likely firewall problem)
+
+Hint: The Certificate Authority failed to download the challenge files from the temporary standalone webserver started by Certbot on port 80. Ensure that the listed domains point to this machine and that it can accept inbound connections from the internet.
+
+Some challenges have failed.
+Ask for help or search for solutions at https://community.letsencrypt.org. See the logfile /var/log/letsencrypt/letsencrypt.log or re-run Certbot with -v for more details.
